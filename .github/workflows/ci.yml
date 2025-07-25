@@ -60,7 +60,7 @@ jobs:
         GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o k8s-tui-linux-amd64 -v ./cmd/k8s-tui
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: binaries
         path: |
