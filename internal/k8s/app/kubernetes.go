@@ -52,8 +52,12 @@ func (a *App) LoadNamespaces() error {
 	for _, ns := range namespaces.Items {
 		a.NsList.AddItem(ns.Name, "", 0, func() {
 			a.CurrentNs = ns.Name
-		a.SelectedNs = ns.Name
-		a.LoadPods()
+			a.SelectedNs = ns.Name
+			a.LoadPods()
+			// Update responsive layout after selection
+			if a.grid != nil {
+				a.updateGridLayout(a.grid)
+			}
 		})
 	}
 
@@ -78,8 +82,12 @@ func (a *App) LoadPods() error {
 	for _, pod := range pods.Items {
 		a.PodList.AddItem(pod.Name, "", 0, func() {
 			a.SelectedPod = pod.Name
-		a.LoadContainers(pod.Name)
-		a.showPodStatus(&pod)
+			a.LoadContainers(pod.Name)
+			a.showPodStatus(&pod)
+			// Update responsive layout after selection
+			if a.grid != nil {
+				a.updateGridLayout(a.grid)
+			}
 		})
 	}
 
@@ -106,6 +114,10 @@ func (a *App) LoadContainers(podName string) error {
 		a.ContList.AddItem(container.Name, "", 0, func() {
 			// Automatically show logs when container is selected
 			a.ShowContainerLogs(containerName)
+			// Update responsive layout after selection
+			if a.grid != nil {
+				a.updateGridLayout(a.grid)
+			}
 		})
 	}
 

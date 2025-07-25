@@ -1,53 +1,72 @@
-# Kubernetes TUI (kUI)
+# K8sTUI - Kubernetes Terminal UI
 
-A simple Kubernetes text-based user interface written in Golang, inspired by k9s.
+A lightweight, keyboard-driven terminal UI for managing Kubernetes clusters, inspired by k9s.
 
 ## Features
 
 - View and navigate Kubernetes namespaces
 - View pods within selected namespaces
 - View containers within selected pods
-- Hotkey-based navigation:
+- Hotkey-based navigation
+- Delete resources with confirmation
+- Real-time log viewing
 
-## Build Instructions
+## Prerequisites
 
-### Prerequisites
-- Go 1.19 or higher
+- Go 1.22
 - Access to a Kubernetes cluster (via kubeconfig)
 
-### Building
+## Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/rusik69/k8stui.git
+cd k8stui
+
 # Build the application
 make build
+
+# Install to your GOPATH
+make install
+```
+
+## Usage
+
+```bash
+# Run the application
+k8stui
+```
+
+### Hotkeys
+
+- `TAB`/`Shift+TAB`: Navigate between panels
+- `ENTER`: Select item
+- `Ctrl+D`: Delete selected resource (with confirmation)
+- `Q`: Quit application
+- `↑/↓/←/→`: Scroll through content
+
+## Development
+
+```bash
+# Install dependencies
+make deps
 
 # Run tests
 make test
 
-# Build for Linux (cross-compilation)
-make build-linux
-
-# Clean build artifacts
-make clean
-
-# Install dependencies
-make deps
-```
-
-### Development
-
-```bash
-# Run the application in development
+# Run the application in development mode
 make run
 
-# Run tests with verbose output
-go test -v ./...
+# Build for different platforms
+make build-all  # Builds for all supported platforms
+make build-darwin-arm64  # Build for Apple Silicon
+make build-linux-amd64   # Build for Linux
 ```
 
 ## GitHub Actions
 
 This project includes GitHub Actions for continuous integration:
-- **CI**: Runs tests and builds on multiple Go versions (1.19, 1.20, 1.21)
+- **CI**: Runs tests and builds on Go 1.22
 - **Build**: Creates binaries for multiple platforms
 - **Artifacts**: Uploads built binaries for releases
 

@@ -13,6 +13,7 @@ import (
 type App struct {
 	App            *tview.Application `json:"-"` // JSON tag "-" to avoid circular reference
 	pages          *tview.Pages       // For modals and other pages
+	grid           *tview.Grid        // Main grid layout for responsive updates
 	NsList         *tview.List
 	PodList        *tview.List
 	ContList       *tview.List

@@ -25,41 +25,35 @@ func (a *App) initUI() {
 	})
 
 	// Create the main grid layout
-	grid := tview.NewGrid()
+	a.grid = tview.NewGrid()
 	hotkeyHelp := "[::b]TAB/Shift+TAB[::-] Navigate | [::b]ENTER[::-] Select | [::b]Ctrl+D[::-] Delete | [::b]Q[::-] Quit | [::b]↑/↓/←/→[::-] Scroll"
-	grid.SetBorder(true).SetTitle(" K8s TUI - " + hotkeyHelp + " ")
+	a.grid.SetBorder(true).SetTitle(" K8s TUI - " + hotkeyHelp + " ")
 
 	// Set up the grid layout to be responsive to terminal size
-	grid.SetRows(0, 0). // Two rows of equal height
+	a.grid.SetRows(0, 0). // Two rows of equal height
 		SetBorders(true)
 
 	// Add items with dynamic sizing based on terminal width
-	grid.AddItem(a.NsList, 0, 0, 1, 1, 0, 0, true).
+	a.grid.AddItem(a.NsList, 0, 0, 1, 1, 0, 0, true).
 		AddItem(a.PodList, 0, 1, 1, 1, 0, 0, false).
 		AddItem(a.ContList, 0, 2, 1, 1, 0, 0, false).
 		AddItem(a.InfoView, 1, 0, 1, 2, 0, 0, false).
 		AddItem(a.LogsView, 1, 2, 1, 1, 0, 0, false)
 
 	// Set up dynamic column sizes based on terminal width
-	grid.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		_, _, width, _ := grid.GetRect()
-		
-		// Calculate column widths based on terminal width
-		switch {
-		case width < 80: // Very narrow terminal
-			grid.SetColumns(15, 15, 20)
-		case width < 120: // Medium width terminal
-			grid.SetColumns(20, 25, 35)
-		default: // Wide terminal
-			grid.SetColumns(25, 30, 40)
+	a.updateGridLayout(a.grid)
+	
+	// Set up terminal resize handler to maintain responsive layout
+	a.App.SetBeforeDrawFunc(func(screen tcell.Screen) bool {
+		if screen != nil {
+			a.updateGridLayout(a.grid)
 		}
-		
-		return event
+		return false
 	})
 
 	// Create a pages container that will hold our main UI and modals
 	mainFlex := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(grid, 0, 1, true)
+		AddItem(a.grid, 0, 1, true)
 
 	// Add the main UI to the pages
 	a.pages.AddPage("main", mainFlex, true, true)
@@ -90,6 +84,32 @@ func (a *App) initUI() {
 	})
 }
 
+// updateGridLayout updates the grid column layout to utilize full terminal width
+func (a *App) updateGridLayout(grid *tview.Grid) {
+	_, _, width, _ := grid.GetRect()
+	
+	// Calculate optimal column widths to utilize full terminal width
+	// with reasonable minimums and proportional distribution
+	switch {
+	case width < 80: // Very narrow terminal
+		// Use full width with reasonable proportions
+		grid.SetColumns(width/3, width/3, width-(2*width/3))
+	case width < 120: // Medium width terminal
+		// Better proportional distribution
+		grid.SetColumns(width/4, width/3, width-(width/4+width/3))
+	default: // Wide terminal (120+)
+		// Optimal distribution for wide screens
+		col1 := max(25, width/5)          // Namespace list
+		col2 := max(30, width/4)         // Pod list  
+		col3 := width - col1 - col2 - 5  // Remaining space for info/logs
+		grid.SetColumns(col1, col2, col3)
+	}
+}
 
-
-
+// Helper function for max
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
