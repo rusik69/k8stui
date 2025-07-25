@@ -53,3 +53,5 @@ Thumbs.db
 # Application-specific
 k8stui
 /cmd/k8stui/k8stui
+k8stui-darwin-arm64
+k8stui-linux-amd64
