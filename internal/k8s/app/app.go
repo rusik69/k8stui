@@ -10,16 +10,17 @@ import (
 // NewApp creates a new instance of the application
 func NewApp() *App {
 	a := &App{
-		App:          tview.NewApplication(),
-		pages:        tview.NewPages(),
-		NsList:       tview.NewList(),
-		PodList:      tview.NewList(),
-		ContList:     tview.NewList(),
-		InfoView:     tview.NewTextView().SetDynamicColors(true),
-		LogsView:     tview.NewTextView().SetDynamicColors(true),
-		CurrentFocus: 0,
-		stopChan:     make(chan struct{}),
-		logStopChan:  make(chan struct{}),
+		App:              tview.NewApplication(),
+		pages:            tview.NewPages(),
+		NsList:           tview.NewList(),
+
+		ResourceList:     tview.NewList(),
+		ResourceTypeList: tview.NewList(),
+		InfoView:         tview.NewTextView().SetDynamicColors(true),
+		LogsView:         tview.NewTextView().SetDynamicColors(true),
+		CurrentFocus:     0,
+		stopChan:         make(chan struct{}),
+		logStopChan:      make(chan struct{}),
 	}
 
 	// Initialize the UI

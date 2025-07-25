@@ -49,15 +49,14 @@ func (a *App) LoadNamespaces() error {
 	}
 
 	a.NsList.Clear()
+	a.ResourceList.Clear()
 	for _, ns := range namespaces.Items {
 		a.NsList.AddItem(ns.Name, "", 0, func() {
 			a.CurrentNs = ns.Name
 			a.SelectedNs = ns.Name
-			a.LoadPods()
-			// Update responsive layout after selection
-			if a.grid != nil {
-				a.updateGridLayout(a.grid)
-			}
+			a.ResourceList.Clear()
+			a.InfoView.Clear()
+			a.LoadResources(ResourceTypePod)
 		})
 	}
 
@@ -73,16 +72,25 @@ func (a *App) LoadPods() error {
 		return fmt.Errorf("no namespace selected")
 	}
 
+	// Hide logs window when displaying pods
+	a.showLogsWindow(false)
+
 	pods, err := a.KubeClient.CoreV1().Pods(a.CurrentNs).List(a.getContext(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error listing pods: %v", err)
 	}
 
-	a.PodList.Clear()
+	a.ResourceList.Clear()
 	for _, pod := range pods.Items {
-		a.PodList.AddItem(pod.Name, "", 0, func() {
-			a.SelectedPod = pod.Name
-			a.LoadContainers(pod.Name)
+		podName := pod.Name // Capture the pod name in closure
+		status := "Running"
+		if pod.Status.Phase != corev1.PodRunning {
+			status = string(pod.Status.Phase)
+		}
+		
+		a.ResourceList.AddItem(pod.Name, status, 0, func() {
+			a.SelectedPod = podName
+			a.LoadContainers(podName)
 			a.showPodStatus(&pod)
 			// Update responsive layout after selection
 			if a.grid != nil {
@@ -108,10 +116,13 @@ func (a *App) LoadContainers(podName string) error {
 		return fmt.Errorf("error getting pod: %v", err)
 	}
 
-	a.ContList.Clear()
+	// Show logs window when displaying containers
+	a.showLogsWindow(true)
+
+	a.ResourceList.Clear()
 	for _, container := range pod.Spec.Containers {
 		containerName := container.Name // Capture the container name in closure
-		a.ContList.AddItem(container.Name, "", 0, func() {
+		a.ResourceList.AddItem(container.Name, "", 0, func() {
 			// Automatically show logs when container is selected
 			a.ShowContainerLogs(containerName)
 			// Update responsive layout after selection

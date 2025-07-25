@@ -17,8 +17,8 @@ func (a *App) UpdateFocus() {
 	case 0:
 		a.App.SetFocus(a.NsList)
 	case 1:
-		a.App.SetFocus(a.PodList)
+		a.App.SetFocus(a.ResourceTypeList)
 	case 2:
-		a.App.SetFocus(a.ContList)
+		a.App.SetFocus(a.ResourceList)
 	}
 }

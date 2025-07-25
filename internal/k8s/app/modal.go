@@ -32,9 +32,9 @@ func (a *App) getCurrentFocus() tview.Primitive {
 	case 0:
 		return a.NsList
 	case 1:
-		return a.PodList
+		return a.ResourceTypeList
 	case 2:
-		return a.ContList
+		return a.ResourceList
 	default:
 		return a.NsList
 	}
