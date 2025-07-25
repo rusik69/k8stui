@@ -14,13 +14,20 @@ all: test build
 build:
 	$(GOBUILD) -o $(BINARY_NAME) -v ./cmd/$(BINARY_NAME)
 
+build-darwin-arm64:
+	GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 $(GOBUILD) -o $(BINARY_NAME)-darwin-arm64 -v ./cmd/$(BINARY_NAME)
+
+build-linux-amd64:
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 $(GOBUILD) -o $(BINARY_NAME)-linux-amd64 -v ./cmd/$(BINARY_NAME)
+
 test:
 	$(GOTEST) -v ./...
 
 clean:
 	$(GOCLEAN)
 	rm -f $(BINARY_NAME)
-	rm -f $(BINARY_UNIX)
+	rm -f $(BINARY_NAME)-darwin-arm64
+	rm -f $(BINARY_NAME)-linux-amd64
 
 run:
 	$(GOBUILD) -o $(BINARY_NAME) -v ./cmd/$(BINARY_NAME)
