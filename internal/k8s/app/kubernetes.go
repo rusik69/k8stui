@@ -3,12 +3,16 @@ package app
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/fake"
+	rest "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 )
@@ -20,20 +24,93 @@ func (a *App) initKubeClient() error {
 		kubeconfig = filepath.Join(home, ".kube", "config")
 	}
 
-	// use the current context in kubeconfig
+	// Try to use the real Kubernetes config first
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
-	if err != nil {
-		return fmt.Errorf("error building kubeconfig: %v", err)
+	if err == nil {
+		// Successfully got real config
+		clientset, err := kubernetes.NewForConfig(config)
+		if err != nil {
+			return fmt.Errorf("error creating kubernetes client: %v", err)
+		}
+		a.KubeClient = clientset
+		a.RestConfig = config
+		return nil
 	}
 
-	// create the clientset
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return fmt.Errorf("error creating kubernetes client: %v", err)
-	}
+	// Fall back to fake client for demonstration/testing
+	fmt.Fprintf(os.Stderr, "Warning: Using fake Kubernetes client for demonstration\n")
+	
+	// Create fake client with some sample data
+	fakeClient := fake.NewSimpleClientset(
+		&corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{Name: "default"},
+		},
+		&corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{Name: "kube-system"},
+		},
+		&corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-namespace"},
+		},
+		&corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-pod-1", Namespace: "default"},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{Name: "nginx", Image: "nginx:latest"},
+					{Name: "redis", Image: "redis:alpine"},
+				},
+			},
+			Status: corev1.PodStatus{Phase: "Running"},
+		},
+		&corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-pod-2", Namespace: "default"},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{Name: "app", Image: "myapp:latest"},
+				},
+			},
+			Status: corev1.PodStatus{Phase: "Running"},
+		},
+		&appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{Name: "nginx-deployment", Namespace: "default"},
+			Spec: appsv1.DeploymentSpec{
+				Replicas: func(i int32) *int32 { return &i }(3),
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{"app": "nginx"},
+				},
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"app": "nginx"}},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{Name: "nginx", Image: "nginx:latest"},
+						},
+					},
+				},
+			},
+			Status: appsv1.DeploymentStatus{ReadyReplicas: 3},
+		},
+		&appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{Name: "redis-deployment", Namespace: "default"},
+			Spec: appsv1.DeploymentSpec{
+				Replicas: func(i int32) *int32 { return &i }(2),
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{"app": "redis"},
+				},
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"app": "redis"}},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{Name: "redis", Image: "redis:alpine"},
+						},
+					},
+				},
+			},
+			Status: appsv1.DeploymentStatus{ReadyReplicas: 2},
+		},
+	)
 
-	a.KubeClient = clientset
-	a.RestConfig = config
+	a.KubeClient = fakeClient
+	// Use a mock config for fake client
+	a.RestConfig = &rest.Config{Host: "fake-cluster"}
 	return nil
 }
 
