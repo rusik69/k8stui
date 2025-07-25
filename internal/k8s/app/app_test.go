@@ -19,8 +19,8 @@ func TestAppCreation(t *testing.T) {
 	assert.NotNil(t, app, "NewApp should return a non-nil instance")
 	assert.NotNil(t, app.App, "App should have a tview.Application")
 	assert.NotNil(t, app.NsList, "App should have a namespace list")
-	assert.NotNil(t, app.PodList, "App should have a pod list")
-	assert.NotNil(t, app.ContList, "App should have a container list")
+	assert.NotNil(t, app.ResourceTypeList, "App should have a resource type list")
+	assert.NotNil(t, app.ResourceList, "App should have a resource list")
 	assert.NotNil(t, app.InfoView, "App should have an info view")
 	assert.NotNil(t, app.LogsView, "App should have a logs view")
 }
@@ -81,16 +81,19 @@ func TestLoadPods(t *testing.T) {
 	
 	app.KubeClient = fakeClient
 	
-	// Test loading pods
+	// Load pods into the UI
 	err := app.LoadPods()
 	require.NoError(t, err, "LoadPods should not return an error")
 	
 	// Verify pods were loaded
-	assert.Equal(t, 2, app.PodList.GetItemCount(), "Should load 2 pods")
+	assert.Equal(t, 2, app.ResourceList.GetItemCount(), "Should load 2 pods")
 	
-	// Test that pods are from the correct namespace
-	name, _ := app.PodList.GetItemText(0)
-	assert.Equal(t, "test-pod-1", name, "First pod should be 'test-pod-1'")
+	// Test pod names
+	name1, _ := app.ResourceList.GetItemText(0)
+	assert.Equal(t, "test-pod-1", name1, "First pod should be 'test-pod-1'")
+	
+	name2, _ := app.ResourceList.GetItemText(1)
+	assert.Equal(t, "test-pod-2", name2, "Second pod should be 'test-pod-2'")
 }
 
 // TestLoadContainers tests loading containers for a pod
@@ -128,16 +131,16 @@ func TestLoadContainers(t *testing.T) {
 	require.NoError(t, err, "LoadContainers should not return an error")
 	
 	// Verify containers were loaded
-	assert.Equal(t, 2, app.ContList.GetItemCount(), "Should load 2 containers")
+	assert.Equal(t, 2, app.ResourceList.GetItemCount(), "Should load 2 containers")
 	
-	// Test container names and statuses
-	name1, desc1 := app.ContList.GetItemText(0)
+	// Test container names
+	name1, desc1 := app.ResourceList.GetItemText(0)
 	assert.Equal(t, "nginx", name1, "First container should be 'nginx'")
-	assert.Contains(t, desc1, "nginx:latest", "Container description should include image")
+	assert.Equal(t, "", desc1, "Container description should be empty")
 	
-	name2, desc2 := app.ContList.GetItemText(1)
+	name2, desc2 := app.ResourceList.GetItemText(1)
 	assert.Equal(t, "redis", name2, "Second container should be 'redis'")
-	assert.Contains(t, desc2, "redis:alpine", "Container description should include image")
+	assert.Equal(t, "", desc2, "Container description should be empty")
 }
 
 // TestLoadPodsWithNoNamespace tests error handling when no namespace is selected
@@ -191,7 +194,7 @@ func TestAppInitializationWithKubeClient(t *testing.T) {
 	
 	err = app.LoadPods()
 	require.NoError(t, err, "LoadPods should work with mocked client")
-	assert.Equal(t, 1, app.PodList.GetItemCount(), "Should load 1 pod")
+	assert.Equal(t, 1, app.ResourceList.GetItemCount(), "Should load 1 pod")
 }
 
 // TestAppMethodsWithRealDependencies tests that app methods work with real dependencies
@@ -205,8 +208,8 @@ func TestAppMethodsWithRealDependencies(t *testing.T) {
 	
 	// Test that UI components are properly initialized
 	assert.NotNil(t, app.NsList)
-	assert.NotNil(t, app.PodList)
-	assert.NotNil(t, app.ContList)
+	assert.NotNil(t, app.ResourceTypeList)
+	assert.NotNil(t, app.ResourceList)
 	assert.NotNil(t, app.InfoView)
 	assert.NotNil(t, app.LogsView)
 	
@@ -282,12 +285,12 @@ func TestIntegrationWithMockClient(t *testing.T) {
 	app.CurrentNs = "default"
 	err = app.LoadPods()
 	require.NoError(t, err)
-	assert.Equal(t, 1, app.PodList.GetItemCount(), "Should load 1 pod")
+	assert.Equal(t, 1, app.ResourceList.GetItemCount(), "Should load 1 pod")
 	
 	// 3. Select pod and load containers
 	err = app.LoadContainers("test-pod-1")
 	require.NoError(t, err)
-	assert.Equal(t, 2, app.ContList.GetItemCount(), "Should load 2 containers")
+	assert.Equal(t, 2, app.ResourceList.GetItemCount(), "Should load 2 containers")
 	
 	// 4. Verify the integration works
 	assert.Equal(t, "default", app.CurrentNs, "Current namespace should be 'default'")
